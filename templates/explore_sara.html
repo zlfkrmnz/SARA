@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <title>SARA - Summarization AI for Research Articles</title>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <meta content="summarize, summarization, research articles, research, articles" name="keywords">
+    <meta content="" name="description">
+
+    <!-- Favicon -->
+    <link href="../static/../static/img/favicon.ico" rel="icon">
+
+    <!-- Google Web Fonts -->
+    <link href="https://fonts.googleapis.com" rel="preconnect">
+    <link crossorigin href="https://fonts.gstatic.com" rel="preconnect">
+    <link href="https://fonts.googleapis.com/css2?family=Open+Sans:wght@400;600&family=Ubuntu:wght@500;700&display=swap"
+          rel="stylesheet">
+
+    <!-- Icon Font Stylesheet -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/5.10.0/css/all.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.4.1/font/bootstrap-icons.css" rel="stylesheet">
+
+    <!-- Libraries Stylesheet -->
+    <link href="lib/animate/animate.min.css" rel="stylesheet">
+    <link href="lib/owlcarousel/assets/owl.carousel.min.css" rel="stylesheet">
+
+    <!-- Customized Bootstrap Stylesheet -->
+    <link href="../static/css/bootstrap.min.css" rel="stylesheet">
+
+    <!-- Template Stylesheet -->
+    <link href="../static/css/style.css" rel="stylesheet">
+</head>
+<body class="bg-light">
+
+<!-- Navbar Start -->
+<div class="container-fluid sticky-top bg-primary">
+    <div class="container">
+        <nav class="navbar navbar-expand-lg navbar-dark p-0">
+            <a class="navbar-brand" href="index.html">
+                <h1 class="text-white">SARA<span class="text-dark"></span></h1>
+            </a>
+            <button class="navbar-toggler ms-auto me-0" data-bs-target="#navbarCollapse" data-bs-toggle="collapse"
+                    type="button">
+                <span class="navbar-toggler-icon"></span>
+            </button>
+            <div class="collapse navbar-collapse" id="navbarCollapse">
+                <div class="navbar-nav ms-auto">
+                    <a class="nav-item nav-link active" href="/">Home</a>
+                    <a class="nav-item nav-link" href="/#what-is-sara">What is SARA?</a>
+                    <a class="nav-item nav-link" href="/#our-team">Our Team</a>
+                    <a class="nav-item nav-link" href="/explore_sara">Explore SARA</a>
+                    <a class="nav-item nav-link" href="/#contact">Contact</a>
+                </div>
+            </div>
+        </nav>
+    </div>
+</div>
+<!-- Navbar End -->
+
+
+<!-- Upload Start -->
+<div class="container mt-5">
+    <h1 class="text-center mb-4">Explore SARA - Upload an Article</h1>
+    <div class="row equal-height">
+        <div class="col-lg-9">
+            <div class="card p-4 shadow-sm mb-4">
+                <div class="card-body">
+                    <form action="{{ url_for('explore_sara') }}" method="post" enctype="multipart/form-data"
+                          class="mb-3" lang="en">
+                        <div class="mb-3">
+                            <label for="document" class="form-label">Choose an article to upload:</label>
+                            <input type="file" class="form-control" name="document" id="document" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary w-100">Upload and Summarize</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-3">
+            <div class="row">
+                <div class="col-lg-12">
+                    <div class="card p-4 shadow-sm">
+                        <div class="card-body">
+                            <h4 class="text-center mb-2">Recent Articles</h4>
+                            {% for article in articles %}
+                            <div class="alert alert-secondary">
+                                <a href="javascript:void(0);" class="article-link" data-id="{{ article[0] }}">{{ article[0]
+                                    }}</a>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="col-lg-12 mt-4">
+            <div class="card p-4 shadow-sm">
+                <div class="card-body">
+                    <h2 class="text-center mb-4">Summary of the Document</h2>
+                    <hr>
+                    <div id="summary-container" style="display: none;">
+                        <p id="summary-text"></p>
+                    </div>
+                    {% if summary %}
+                    <div id="uploaded-summary-container">
+                        <p>{{ summary }}</p>
+                    </div>
+                    {% else %}
+                    <div id="uploaded-summary-container" style="display: none;">
+                        <p></p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Bootstrap JavaScript Bundle with Popper -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', (event) => {
+        const articleLinks = document.querySelectorAll('.article-link');
+        articleLinks.forEach(link => {
+            link.addEventListener('click', (e) => {
+                e.preventDefault();
+                const articleId = e.target.getAttribute('data-id');
+                fetch(`/summary/${articleId}`)
+                    .then(response => response.json())
+                    .then(data => {
+                        console.log(data);
+                        document.getElementById('summary-text').textContent = data.summary;
+                        document.getElementById('summary-container').style.display = 'block';
+                        document.getElementById('uploaded-summary-container').style.display = 'none';
+                    })
+                    .catch(error => console.error('Error:', error));
+            });
+        });
+
+        const dropArea = document.createElement('div');
+        dropArea.innerHTML = "<br><br>Drag your file here<br><br><br>";
+        dropArea.classList.add('p-5', 'border', 'border-primary', 'rounded', 'text-center', 'mb-5');
+        document.querySelector('form').insertAdjacentElement('beforebegin', dropArea);
+
+        dropArea.addEventListener('dragover', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            event.dataTransfer.dropEffect = 'copy';
+            dropArea.classList.add('bg-light'); // Visual feedback
+        });
+
+        dropArea.addEventListener('dragleave', (event) => {
+            dropArea.classList.remove('bg-light'); // Remove visual feedback
+        });
+
+        dropArea.addEventListener('drop', (event) => {
+            event.stopPropagation();
+            event.preventDefault();
+            dropArea.classList.remove('bg-light'); // Remove visual feedback
+            const files = event.dataTransfer.files;
+            document.querySelector('input[type="file"]').files = files;
+            document.querySelector('form').submit();  // Automatically submit form after file is dropped
+        });
+    });
+</script>
+<!-- Upload End -->
+
+
+<!-- Footer Start -->
+<div class="container-fluid bg-dark text-white-50 footer pt-5">
+    <div class="container py-5">
+        <div class="row g-5">
+            <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.1s">
+                <a class="d-inline-block mb-3" href="index.html">
+                    <h1 class="text-white">SARA<span class="text-primary"></span></h1>
+                </a>
+                <p class="mb-0">Empowering Your Research with AI-Driven Summaries.
+                    Explore a world where complex information is simplified, helping you focus on what truly matters in
+                    your academic journey.</p>
+            </div>
+            <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.3s">
+                <h5 class="text-white mb-4">Get In Touch</h5>
+                <p><i class="fa fa-map-marker-alt me-3"></i>Manisa Celal Bayar Üniversitesi, Manisa, Turkiye</p>
+                <p><i class="fa fa-phone-alt me-3"></i>+90 530 309 19 27</p>
+                <p><i class="fa fa-envelope me-3"></i>info@saratr.com</p>
+                <div class="d-flex pt-2">
+                    <a class="btn btn-outline-light btn-social" href="#"><i class="fab fa-twitter"></i></a>
+                    <a class="btn btn-outline-light btn-social" href="#"><i class="fab fa-facebook-f"></i></a>
+                    <a class="btn btn-outline-light btn-social" href="#"><i class="fab fa-youtube"></i></a>
+                    <a class="btn btn-outline-light btn-social" href="#"><i class="fab fa-instagram"></i></a>
+                    <a class="btn btn-outline-light btn-social" href="#"><i class="fab fa-linkedin-in"></i></a>
+                </div>
+            </div>
+            <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.5s">
+                <h5 class="text-white mb-4">Popular Link</h5>
+                <a class="btn btn-link" href="">Home</a>
+                <a class="btn btn-link" href="">What is SARA?</a>
+                <a class="btn btn-link" href="">Our Team</a>
+                <a class="btn btn-link" href="">Explore SARA</a>
+                <a class="btn btn-link" href="">Contact</a>
+            </div>
+            <div class="col-md-6 col-lg-3 wow fadeIn" data-wow-delay="0.7s">
+                <h5 class="text-white mb-4">Our Services</h5>
+                <a class="btn btn-link" href="">Robotic Automation</a>
+                <a class="btn btn-link" href="">Machine learning</a>
+                <a class="btn btn-link" href="">Predictive Analysis</a>
+                <a class="btn btn-link" href="">Data Science</a>
+                <a class="btn btn-link" href="">Robot Technology</a>
+            </div>
+        </div>
+    </div>
+    <div class="container wow fadeIn" data-wow-delay="0.1s">
+        <div class="copyright">
+            <div class="row">
+                <div class="col-md-6 text-center text-md-start mb-3 mb-md-0">
+                    &copy; <a class="border-bottom" href="#">SARA</a>, All Right Reserved.
+                    Designed By <a class="border-bottom" href="https://htmlcodex.com">HTML Codex</a> Distributed By <a
+                        class="border-bottom" href="https://themewagon.com">ThemeWagon</a>
+                </div>
+                <div class="col-md-6 text-center text-md-end">
+                    <div class="footer-menu">
+                        <a href="">Home</a>
+                        <a href="">What is SARA?</a>
+                        <a href="">Our Team</a>
+                        <a href="">Explore SARA</a>
+                        <a href="">Contact</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+<!-- Footer End -->
+
+
+<!-- Back to Top -->
+<a class="btn btn-lg btn-primary btn-lg-square back-to-top pt-2" href="#"><i class="bi bi-arrow-up"></i></a>
+
+
+<!-- JavaScript Libraries -->
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.6.1/jquery.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+<script src="lib/wow/wow.min.js"></script>
+<script src="lib/easing/easing.min.js"></script>
+<script src="lib/waypoints/waypoints.min.js"></script>
+<script src="lib/counterup/counterup.min.js"></script>
+<script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+<!-- Template Javascript -->
+<script src="../static/js/main.js"></script>
+
+
+</body>
+</html>
